@@ -6,6 +6,7 @@ const Glassdoor = require('node-glassdoor').initGlassdoor({
   partnerId: config.config.partnerId,
   partnerKey: config.config.key
 });
+const Promise = require("bluebird");
 
 
 models.Company.findOrCreate = function(req, res) {
@@ -101,26 +102,16 @@ module.exports.createIfUpdated = (req, res, result) => {
       }
       return company;
     })
-    .then(result => {
-      //console.log('new company saved result: ', result.attributes);
+    .then((result) => {
       return models.Company.getGlassdoorInfoForUpdatedCompany(req, res, result);
     })
     .then(result => {
-      //console.log('after glassdoor results: ', result.attributes);
       return result;
     })
-    // .then (result => {
-    //   console.log('NEW COMPANY ID: ', result.attributes.id)
-    //   // models.Card.forge().where({ company_id: result.attributes.})
-    // })
     .catch(err => {
       console.log(err);
     });
 };
 
 module.exports.getGlassdoorInfo = models.Company.getGlassdoorInfo;
-
-// module.exports = {
-//   getGlassdoorInfo: models.Company.getGlassdoorInfo,
-//   getGlassdoorInfoForUpdatedCompany: models.Company.getGlassdoorInfoForUpdatedCompany
-// };
+module.exports.getGlassdoorInfoForUpdatedCompany = models.Company.getGlassdoorInfoForUpdatedCompany;

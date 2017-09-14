@@ -1,6 +1,7 @@
 const models = require('../../db/models');
 const lifecycle = require ('./lifecycle.js');
 const company = require('./companies.js');
+const Promise = require("bluebird");
 
 module.exports.getAll = (req, res) => {
   models.Card.forge().where({user_id: req.user.id}).fetchAll({withRelated: ['company']})
@@ -57,7 +58,7 @@ module.exports.create = (req, res, company) => {
 };
 
 module.exports.update = (req, res) => {
-  models.Card.forge().where({
+  var updatedCard = models.Card.forge().where({
     user_id: req.user.id,
     id: req.body.id }).fetch()
     .then(card => {
@@ -73,28 +74,49 @@ module.exports.update = (req, res) => {
         recruiter_name: req.body.job.recruiter_name,
         recruiter_email: req.body.job.recruiter_email
       }, { method: 'update' });
-    })
-    .then(card => {
-      return models.Card.forge().where({ id: card.id }).fetch()
-    })
-    .then(savedCard => {
+    });
+    var updatedCompany = updatedCard.then(savedCard => {
       lifecycle.createIfUpdated(req, res, savedCard);
       return company.createIfUpdated(req, res, savedCard);
     })
+    return Promise.join(updatedCard, updatedCompany, (cardData, companyData) => {
+      console.log('UPDATED CARD PROMISE RESULT: ', cardData.attributes);
+      console.log('UPDATED COMPANY PROMISE RESULT: ', companyData.attributes);
+      var card = {
+        id: cardData.attributes.id,
+        company: {
+          id: companyData.attributes.id,
+          name: companyData.attributes.name,
+          industry: companyData.attributes.industry,
+          logoUrl: companyData.attributes.logo_url,
+          companyUrl: companyData.attributes.company_url,
+          description: companyData.attributes.description,
+          //TODO: location: company.location_id
+          location: 'San Francisco, CA'
+        },
+        position: cardData.attributes.position,
+        positionUrl: cardData.attributes.position_url,
+        currentStatus: cardData.attributes.current_status,
+        statusDate: req.body.status.date,
+        notes: cardData.attributes.notes,
+        company_id: companyData.attributes.id,
+        recruiterName: cardData.attributes.recruiter_name,
+        recruiterEmail: cardData.attributes.recruiter_email
+      };
+      return card;
+    })
     .then(result => {
-      console.log('company card: ', result.attributes)
+      console.log('HERES THE RESULT: ', result);
       models.Card.forge().where({
         user_id: req.user.id,
-        id: req.body.id
+        id: result.id
       }).fetch()
       .then(card => {
-        return card.save({
-          company_id: result.attributes.id
+        card.save({
+          company_id: result.company.id
         }, { method: 'update'});
       })
-    })
-    .then(() => {
-      res.sendStatus(201);
+      res.status(201).send(result);
     })
     .error(err => {
       res.status(500).send(err);
