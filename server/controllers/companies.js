@@ -50,7 +50,6 @@ models.Company.getGlassdoorInfo = function (req, res, company) {
       country: 'US'
     })
     .then(function (data) {
-      console.log(data);
       return company.save ({
         industry: data.industryName,
         logo_url: data.squareLogo,
@@ -59,9 +58,27 @@ models.Company.getGlassdoorInfo = function (req, res, company) {
         rating: data.overallRating
       })
         .then(result =>{
-          console.log(result);
           card.create(req, res, result);
         });
+    })
+    .catch(err => {
+      console.error(err);
+    });
+};
+
+models.Company.getGlassdoorInfoForUpdatedCompany = function (req, res, company) {
+  return Glassdoor.findOneCompany(company.attributes.name,
+    {
+      country: 'US'
+    })
+    .then(function (data) {
+      return company.save ({
+        industry: data.industryName,
+        logo_url: data.squareLogo,
+        company_url: data.website,
+        description: data.featuredReview.headline,
+        rating: data.overallRating
+      });
     })
     .catch(err => {
       console.error(err);
@@ -73,29 +90,37 @@ module.exports.create = (req, res) => {
   return models.Company.findOrCreate(req, res);
 };
 
-module.exports.update = (req, res) => {
+module.exports.createIfUpdated = (req, res, result) => {
   return models.Company.forge().where({ name: req.body.job.company}).fetch()
     .then(company => {
-      if (company) {
-        res.send('That company already exists in db!');
+      if (!company) {
+        console.log('company doesnt exist bleh');
+        return models.Company.forge({
+          name: req.body.job.company
+        }).save()
       }
-      return company.save({
-        name: req.body.job.company
-      }, { method: 'update' });
+      return company;
     })
     .then(result => {
-      return models.Company.getGlassdoorInfo(req, res, result);
+      //console.log('new company saved result: ', result.attributes);
+      return models.Company.getGlassdoorInfoForUpdatedCompany(req, res, result);
     })
-    .then(() => {
-      res.sendStatus(201);
+    .then(result => {
+      //console.log('after glassdoor results: ', result.attributes);
+      return result;
     })
-    .error(err => {
-      res.status(500).send(err);
-    })
+    // .then (result => {
+    //   console.log('NEW COMPANY ID: ', result.attributes.id)
+    //   // models.Card.forge().where({ company_id: result.attributes.})
+    // })
     .catch(err => {
-        res.sendStatus(404);
+      console.log(err);
     });
 };
 
-
 module.exports.getGlassdoorInfo = models.Company.getGlassdoorInfo;
+
+// module.exports = {
+//   getGlassdoorInfo: models.Company.getGlassdoorInfo,
+//   getGlassdoorInfoForUpdatedCompany: models.Company.getGlassdoorInfoForUpdatedCompany
+// };

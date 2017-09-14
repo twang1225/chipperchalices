@@ -56,10 +56,10 @@ module.exports.create = (req, res, company) => {
     });
 };
 
-//job card update initiated by user's edits
 module.exports.update = (req, res) => {
-  console.log('UPDATE USER ID: ', req.user.id)
-  models.Card.forge().where({ user_id: req.user.id }).fetch()
+  models.Card.forge().where({
+    user_id: req.user.id,
+    id: req.body.id }).fetch()
     .then(card => {
       if (!card) {
         throw card;
@@ -69,21 +69,29 @@ module.exports.update = (req, res) => {
         position_url: req.body.job.url,
         description: null,
         notes: req.body.job.notes,
-        //company_id: company.id,
-        //user_id: req.user.id,
         current_status: req.body.status.status,
         recruiter_name: req.body.job.recruiter_name,
         recruiter_email: req.body.job.recruiter_email
       }, { method: 'update' });
     })
-    .then(result => {
-      console.log('HERES THE CARD: ', result);
-      //res.status(201).send(result);
-      lifecycle.update(req, res, result);
-      console.log('card updated in db');
+    .then(card => {
+      return models.Card.forge().where({ id: card.id }).fetch()
     })
-    .then(() => {
-      company.update(req, res);
+    .then(savedCard => {
+      lifecycle.createIfUpdated(req, res, savedCard);
+      return company.createIfUpdated(req, res, savedCard);
+    })
+    .then(result => {
+      console.log('company card: ', result.attributes)
+      models.Card.forge().where({
+        user_id: req.user.id,
+        id: req.body.id
+      }).fetch()
+      .then(card => {
+        return card.save({
+          company_id: result.attributes.id
+        }, { method: 'update'});
+      })
     })
     .then(() => {
       res.sendStatus(201);
@@ -92,7 +100,6 @@ module.exports.update = (req, res) => {
       res.status(500).send(err);
     })
     .catch(() => {
-      console.log('CARD CONTROLLER UPDATE 404')
       res.sendStatus(404);
     });
 };

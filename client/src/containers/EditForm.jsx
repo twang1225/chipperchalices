@@ -93,7 +93,7 @@ class EditForm extends React.Component {
       value: value,
     });
   }
-  
+
   handleDate (e, date) {
     this.setState({
       change: true,
@@ -110,6 +110,7 @@ class EditForm extends React.Component {
     var form = this;
     // Add more to object later
     var content = {
+      id: this.state.id,
       job: {
         title: this.state.title,
         company: this.state.company,
@@ -178,10 +179,10 @@ class EditForm extends React.Component {
           </DropDownMenu><br/>
           <DatePicker onChange={this.handleDate} value={this.state.date}/><br/>
           <TextField onChange={this.handleURL} defaultValue={this.state.url}/><br/>
-          <TextField onChange={this.handleNotes} 
-            defaultValue={this.state.notes} 
-            multiLine={this.state.notes === 'null' ? true : false} 
-            rows={1} rowsMax={10} 
+          <TextField onChange={this.handleNotes}
+            defaultValue={this.state.notes}
+            multiLine={this.state.notes === 'null' ? true : false}
+            rows={1} rowsMax={10}
             hintText={'Notes'}/><br/>
         </Dialog>
       </div>
@@ -192,7 +193,7 @@ class EditForm extends React.Component {
 // function mapDispatchToProps () {
 
 //}
- 
+
 // function mapStateToProps () {
 
 // }
