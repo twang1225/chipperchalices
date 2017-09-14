@@ -6,7 +6,7 @@ const Glassdoor = require('node-glassdoor').initGlassdoor({
   partnerId: config.config.partnerId,
   partnerKey: config.config.key
 });
-const Promise = require("bluebird");
+const Promise = require('bluebird');
 
 
 models.Company.findOrCreate = function(req, res) {
@@ -95,7 +95,6 @@ module.exports.createIfUpdated = (req, res, result) => {
   return models.Company.forge().where({ name: req.body.job.company}).fetch()
     .then(company => {
       if (!company) {
-        console.log('company doesnt exist bleh');
         return models.Company.forge({
           name: req.body.job.company
         }).save()

@@ -1,7 +1,7 @@
 const models = require('../../db/models');
 const lifecycle = require ('./lifecycle.js');
 const company = require('./companies.js');
-const Promise = require("bluebird");
+const Promise = require('bluebird');
 
 module.exports.getAll = (req, res) => {
   models.Card.forge().where({user_id: req.user.id}).fetchAll({withRelated: ['company']})
@@ -34,14 +34,14 @@ module.exports.create = (req, res, company) => {
           id: company.id,
           name: company.attributes.name,
           industry: company.attributes.industry,
-          logoUrl: company.attributes.logo_url,
+          logo_url: company.attributes.logo_url,
           companyUrl: company.attributes.company_url,
           description: company.attributes.description,
           // TODO: location: company.location_id
           location: 'San Francisco, CA'
         },
         position: result.attributes.position,
-        positionUrl: result.attributes.position_url,
+        position_url: result.attributes.position_url,
         currentStatus: req.body.status.status,
         statusDate: req.body.status.date,
         notes: result.attributes.notes,
@@ -80,22 +80,20 @@ module.exports.update = (req, res) => {
       return company.createIfUpdated(req, res, savedCard);
     })
     return Promise.join(updatedCard, updatedCompany, (cardData, companyData) => {
-      console.log('UPDATED CARD PROMISE RESULT: ', cardData.attributes);
-      console.log('UPDATED COMPANY PROMISE RESULT: ', companyData.attributes);
       var card = {
         id: cardData.attributes.id,
         company: {
           id: companyData.attributes.id,
           name: companyData.attributes.name,
           industry: companyData.attributes.industry,
-          logoUrl: companyData.attributes.logo_url,
+          logo_url: companyData.attributes.logo_url,
           companyUrl: companyData.attributes.company_url,
           description: companyData.attributes.description,
           //TODO: location: company.location_id
           location: 'San Francisco, CA'
         },
         position: cardData.attributes.position,
-        positionUrl: cardData.attributes.position_url,
+        position_url: cardData.attributes.position_url,
         currentStatus: cardData.attributes.current_status,
         statusDate: req.body.status.date,
         notes: cardData.attributes.notes,
@@ -106,7 +104,6 @@ module.exports.update = (req, res) => {
       return card;
     })
     .then(result => {
-      console.log('HERES THE RESULT: ', result);
       models.Card.forge().where({
         user_id: req.user.id,
         id: result.id
